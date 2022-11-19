@@ -1,6 +1,5 @@
 package com.mts.teta.tagmanager.controller;
 
-import static com.mts.teta.tagmanager.domain.Trigger.TriggerType.SET_INTERVAL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,75 +74,222 @@ public class ContainerController {
 
   @SneakyThrows
   private String triggerToJsString(Trigger trigger) {
-    if (trigger.getType() != SET_INTERVAL) {
-      // Если будете добавлять новые типы триггеров, поддержку для них вам нужно будет
-      // реализовать самостоятельно
-      throw new UnsupportedOperationException(
-          "Указанный тип триггера еще не поддерживается: " + trigger.getType()
+    final var userIds = userInfoRepository.findAllUserIds();
+    switch (trigger.getType()) {
+      case SET_INTERVAL -> {
+        final var attributes = trigger.getAttributes().getSetTimeout();
+        return """
+                // Дополнительное оборачивание в function - хак, который позволяет
+                // выполнить код сразу при загрузке страницы
+                (function() {
+                  console.log("Trigger {triggerName} is activated");
+                  /*
+                    В данном случае, никаких дополнительных листенеров не нужно, потому что мы просто регистрируем функцию
+                    через setInterval, которая периодически выполняется.
+                    Если же вы, например, захотите отслеживать события клика, или скролла, то вам нужно будет добавить
+                    соответствующие слушатели:
+                    
+                    document.addEventListener('click', function() {...});
+                    document.addEventListener('scroll', function() {...});
+                    
+                    и так далее
+                  */
+                  setInterval(function() {
+                    console.log("Trigger {triggerName} is performing the action");
+                    // здесь отправляется сообщение на бэкенд
+                    // Endpoint, как видите, захардкожен. При дефолтных настройках все будет работать.
+                    // Но лучше, если это поле будет конфигурируемым
+                    fetch('http://localhost:8080/api/message', {
+                      method: 'POST',
+                      mode: 'no-cors',
+                      headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                      },
+                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
+                      body: JSON.stringify({
+                        "userId": "{userId}",
+                        "event": "set_interval",
+                        "element": null, // setInterval не привязан к какому-то конкретному элементу на странице
+                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
+                        "app_name": "{appName}",
+                        "app_id": {appId},
+                        // в event_params как раз сохраняет trigger.attributes
+                        "event_params": {attributes}
+                      })
+                    })
+                  }, {delayMillis})
+                })()
+                """.replaceAll("\\{triggerName}", trigger.getName())
+                .replaceAll(
+                        "\\{attributes}",
+                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
+                        objectMapper.writeValueAsString(
+                                attributes.getMessageToSend()
+                        )
+                )
+                .replaceAll("\\{delayMillis}", String.valueOf(attributes.getDelayMillis()))
+                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
+                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
+                .replaceAll(
+                        "\\{userId}",
+                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
+                        // Вы можете доработать и придумать что-то более интеллектуальное.
+                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
+                        // значение из соответствующего множества
+                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
+                );
+      }
+      case MOUSE_DOWN -> {
+        final var attributes = trigger.getAttributes().getMouseDown();
+        return """
+                (function() {
+                  console.log("Trigger {triggerName} is activated");
+                  document.addEventListener('mousedown', mousedownEvent);
+                  function mousedownEvent(event) {
+                    console.log("Trigger {triggerName} is performing the action");
+                    fetch('http://localhost:8080/api/message', {
+                      method: 'POST',
+                      mode: 'no-cors',
+                      headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                      },
+                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
+                      body: JSON.stringify({
+                        "userId": "{userId}",
+                        "event": "mousedown",
+                        "element": event.clientX + " " + event.clientY + " " + event.which, // привязан к какому-то конкретному элементу на странице
+                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
+                        "app_name": "{appName}",
+                        "app_id": {appId},
+                        // в event_params как раз сохраняет trigger.attributes
+                        "event_params": {attributes}
+                      })
+                    })
+                  }
+                })()
+                """.replaceAll("\\{triggerName}", trigger.getName())
+                .replaceAll(
+                        "\\{attributes}",
+                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
+                        objectMapper.writeValueAsString(
+                                attributes.getMessageToSend()
+                        )
+                )
+                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
+                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
+                .replaceAll(
+                        "\\{userId}",
+                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
+                        // Вы можете доработать и придумать что-то более интеллектуальное.
+                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
+                        // значение из соответствующего множества
+                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
+                );
+      }
+      case MOUSE_UP -> {
+        final var attributes = trigger.getAttributes().getMouseUp();
+        return """
+                (function() {
+                  console.log("Trigger {triggerName} is activated");
+                  document.addEventListener('mouseup', mouseupEvent);
+                  function mouseupEvent(event) {
+                    console.log("Trigger {triggerName} is performing the action");
+                    fetch('http://localhost:8080/api/message', {
+                      method: 'POST',
+                      mode: 'no-cors',
+                      headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                      },
+                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
+                      body: JSON.stringify({
+                        "userId": "{userId}",
+                        "event": "mouseup",
+                        "element": event.clientX + " " + event.clientY + " " + event.which, // привязан к какому-то конкретному элементу на странице
+                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
+                        "app_name": "{appName}",
+                        "app_id": {appId},
+                        // в event_params как раз сохраняет trigger.attributes
+                        "event_params": {attributes}
+                      })
+                    })
+                  }
+                })()
+                """.replaceAll("\\{triggerName}", trigger.getName())
+                   .replaceAll(
+                     "\\{attributes}",
+                     // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
+                     objectMapper.writeValueAsString(
+                       attributes.getMessageToSend()
+                     )
+                   )
+                   .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
+                   .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
+                   .replaceAll(
+                     "\\{userId}",
+                     // Здесь простая реализация: подставляем случайный userId из всех существующих.
+                     // Вы можете доработать и придумать что-то более интеллектуальное.
+                     // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
+                     // значение из соответствующего множества
+                     userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
+                   );
+      }
+      case SCROLL -> {
+        final var attributes = trigger.getAttributes().getScroll();
+        return """
+                (function() {
+                  console.log("Trigger {triggerName} is activated");
+                  document.addEventListener('scroll', scrollEvent);
+                  var prev = new Date();
+                  function scrollEvent(event) {
+                    if (new Date() - prev < 1000) { return; }
+                    prev = new Date();
+                    console.log("Trigger {triggerName} is performing the action");
+                    fetch('http://localhost:8080/api/message', {
+                      method: 'POST',
+                      mode: 'no-cors',
+                      headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                      },
+                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
+                      body: JSON.stringify({
+                        "userId": "{userId}",
+                        "event": "scroll",
+                        "element": window.scrollX + " " + window.scrollY, // привязан к какому-то конкретному элементу на странице
+                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
+                        "app_name": "{appName}",
+                        "app_id": {appId},
+                        // в event_params как раз сохраняет trigger.attributes
+                        "event_params": {attributes}
+                      })
+                    })
+                  }
+                })()
+                """.replaceAll("\\{triggerName}", trigger.getName())
+                .replaceAll(
+                        "\\{attributes}",
+                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
+                        objectMapper.writeValueAsString(
+                                attributes.getMessageToSend()
+                        )
+                )
+                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
+                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
+                .replaceAll(
+                        "\\{userId}",
+                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
+                        // Вы можете доработать и придумать что-то более интеллектуальное.
+                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
+                        // значение из соответствующего множества
+                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
+                );
+      }
+      default -> throw new UnsupportedOperationException(
+        "Указанный тип триггера еще не поддерживается: " + trigger.getType()
       );
     }
-    final var attributes = trigger.getAttributes().getSetTimeout();
-    final var userIds = userInfoRepository.findAllUserIds();
-    return """
-        // дополнительно оборачивание в function - хак, который позволяет
-        // выполнить код сразу при загрузке страницы
-        (function() {
-          console.log("Trigger {triggerName} is activated");
-          /*
-            В данном случае, никаких дополнительных листенеров не нужно, потому что мы просто регистриуем функцию
-            через setInterval, которая периодически выполняется.
-            Если же вы, например, захотите отслеживать события клика, или скролла, то вам нужно будет добавить
-            соответствующие слушатели:
-            
-            document.addEventListener('click', function() {...});
-            document.addEventListener('scroll', function() {...});
-            
-            и так далее
-          */
-          setInterval(function() {
-              console.log("Trigger {triggerName} is performing the action");
-              // здесь отправляется сообщение на бэкенд
-              // Endpoint, как видите, захардкожен. При дефолтных настройках все будет работать.
-              // Но лучше, если это поле будет конфигурируемым
-              fetch('http://localhost:8080/api/message', {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                  },
-                  // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
-                  body: JSON.stringify({
-                      "userId": "{userId}",
-                      "event": "set_interval",
-                      "element": null, // setInterval не привязан к какому-то конкретному элементу на странице
-                      // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
-                      "app_name": "{appName}",
-                      "app_id": {appId},
-                      // в event_params как раз сохраняет trigger.attributes
-                      "event_params": {attributes}
-                  })
-              })
-          }, {delayMillis})
-        })()
-        """.replaceAll("\\{triggerName}", trigger.getName())
-        .replaceAll(
-            "\\{attributes}",
-            // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
-            objectMapper.writeValueAsString(
-                attributes.getMessageToSend()
-            )
-        )
-        .replaceAll("\\{delayMillis}", String.valueOf(attributes.getDelayMillis()))
-        .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
-        .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
-        .replaceAll(
-            "\\{userId}",
-            // Здесь простая реализация: подставляем случайный userId из всех существующих.
-            // Вы можете доработать и придумать что-то более интеллектуальное.
-            // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
-            // значение из соответствующего множества
-            userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
-        );
   }
 }

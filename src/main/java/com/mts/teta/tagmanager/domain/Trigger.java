@@ -67,7 +67,10 @@ public class Trigger {
   // Тип триггера. По умолчанию добавлен только SET_INTERVAL (как функция в Javascript),
   // но вы можете добавлять свои
   public enum TriggerType {
-    SET_INTERVAL
+    SET_INTERVAL,
+    MOUSE_DOWN,
+    MOUSE_UP,
+    SCROLL
   }
 
   public static Trigger newTrigger(
@@ -87,18 +90,28 @@ public class Trigger {
   @Getter
   public static class TriggerAttributes {
 
-    // эти параметры выставляем, если тип триггера SET_INTERVAL
+    // Эти параметры выставляем, если тип триггера SET_INTERVAL
     // соответственно, если вы добавите новые типы, нужно будет для них сделать и новые параметры.
     // При этом предполагаем, что остальные в этом случае равны null
-    @NotNull(message = "SetTimeout cannot be null")
     @Valid
     private final SetTimeout setTimeout;
+    @Valid
+    private final MouseDown mouseDown;
+    @Valid
+    private final MouseUp mouseUp;
+    @Valid
+    private final Scroll scroll;
+
+
 
     @JsonCreator
     public TriggerAttributes(
-        SetTimeout setTimeout
+        SetTimeout setTimeout, MouseDown mouseDown, MouseUp mouseUp, Scroll scroll
     ) {
       this.setTimeout = setTimeout;
+      this.mouseDown = mouseDown;
+      this.mouseUp = mouseUp;
+      this.scroll = scroll;
     }
 
     @Getter
@@ -106,11 +119,11 @@ public class Trigger {
 
       @Min(value = 1, message = "Delay millis cannot be less than {value} but actual value is ${validatedValue}")
       private final int delayMillis;
-      // Это как раз то сообщение, которое при срабатывание триггера и отправляется на бэкенд
+      // Это как раз то сообщение, которое при срабатывании триггера и отправляется на бэкенд
       // и в итоге попадает в аналитическое хранилище.
       // Для простоты здесь оно задано статически. Но вы можете подумать, как сюда добавить динамику
       // При формировании итогового JS-скрипта (смотри ContainerController) сюда могут подставляться также и другие значения.
-      @NotNull(message = "MessageToSend cannot be nyll")
+      @NotNull(message = "MessageToSend cannot be null")
       private final Map<String, Object> messageToSend;
 
       @JsonCreator
@@ -119,6 +132,45 @@ public class Trigger {
           Map<String, Object> messageToSend
       ) {
         this.delayMillis = delayMillis;
+        this.messageToSend = messageToSend;
+      }
+    }
+
+    @Getter
+    public static class MouseDown {
+      @NotNull(message = "MessageToSend cannot be null")
+      private final Map<String, Object> messageToSend;
+
+      @JsonCreator
+      public MouseDown(
+              Map<String, Object> messageToSend
+      ) {
+        this.messageToSend = messageToSend;
+      }
+    }
+
+    @Getter
+    public static class MouseUp {
+      @NotNull(message = "MessageToSend cannot be null")
+      private final Map<String, Object> messageToSend;
+
+      @JsonCreator
+      public MouseUp(
+              Map<String, Object> messageToSend
+      ) {
+        this.messageToSend = messageToSend;
+      }
+    }
+
+    @Getter
+    public static class Scroll {
+      @NotNull(message = "MessageToSend cannot be null")
+      private final Map<String, Object> messageToSend;
+
+      @JsonCreator
+      public Scroll(
+              Map<String, Object> messageToSend
+      ) {
         this.messageToSend = messageToSend;
       }
     }
