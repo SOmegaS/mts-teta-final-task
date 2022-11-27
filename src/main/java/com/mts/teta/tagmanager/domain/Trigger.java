@@ -70,7 +70,8 @@ public class Trigger {
     SET_INTERVAL,
     MOUSE_DOWN,
     MOUSE_UP,
-    SCROLL
+    SCROLL,
+    MOUSE_MOVE
   }
 
   public static Trigger newTrigger(
@@ -101,21 +102,29 @@ public class Trigger {
     private final MouseUp mouseUp;
     @Valid
     private final Scroll scroll;
-
+    @Valid
+    private final MouseMove mouseMove;
 
 
     @JsonCreator
     public TriggerAttributes(
-        SetTimeout setTimeout, MouseDown mouseDown, MouseUp mouseUp, Scroll scroll
+        SetTimeout setTimeout, MouseDown mouseDown, MouseUp mouseUp, Scroll scroll, MouseMove mouseMove
     ) {
       this.setTimeout = setTimeout;
       this.mouseDown = mouseDown;
       this.mouseUp = mouseUp;
       this.scroll = scroll;
+      this.mouseMove = mouseMove;
+    }
+
+    public interface TemplateTrigger {
+      Map<String, Object> getMessageToSend();
+
+      int getDelayMillis();
     }
 
     @Getter
-    public static class SetTimeout {
+    public static class SetTimeout implements TemplateTrigger {
 
       @Min(value = 1, message = "Delay millis cannot be less than {value} but actual value is ${validatedValue}")
       private final int delayMillis;
@@ -137,9 +146,11 @@ public class Trigger {
     }
 
     @Getter
-    public static class MouseDown {
+    public static class MouseDown implements TemplateTrigger {
       @NotNull(message = "MessageToSend cannot be null")
       private final Map<String, Object> messageToSend;
+
+      private final int delayMillis = 0;
 
       @JsonCreator
       public MouseDown(
@@ -150,9 +161,11 @@ public class Trigger {
     }
 
     @Getter
-    public static class MouseUp {
+    public static class MouseUp implements TemplateTrigger {
       @NotNull(message = "MessageToSend cannot be null")
       private final Map<String, Object> messageToSend;
+
+      private final int delayMillis = 0;
 
       @JsonCreator
       public MouseUp(
@@ -163,14 +176,37 @@ public class Trigger {
     }
 
     @Getter
-    public static class Scroll {
+    public static class Scroll implements TemplateTrigger {
       @NotNull(message = "MessageToSend cannot be null")
       private final Map<String, Object> messageToSend;
 
+      @Min(value = 1, message = "Delay millis cannot be less than {value} but actual value is ${validatedValue}")
+      private final int delayMillis;
+
       @JsonCreator
       public Scroll(
+              int delayMillis,
               Map<String, Object> messageToSend
       ) {
+        this.delayMillis = delayMillis;
+        this.messageToSend = messageToSend;
+      }
+    }
+
+    @Getter
+    public static class MouseMove implements TemplateTrigger {
+      @NotNull(message = "MessageToSend cannot be null")
+      private final Map<String, Object> messageToSend;
+
+      @Min(value = 1, message = "Delay millis cannot be less than {value} but actual value is ${validatedValue}")
+      private final int delayMillis;
+
+      @JsonCreator
+      public MouseMove(
+              int delayMillis,
+              Map<String, Object> messageToSend
+      ) {
+        this.delayMillis = delayMillis;
         this.messageToSend = messageToSend;
       }
     }

@@ -10,6 +10,9 @@ import com.mts.teta.tagmanager.domain.Container;
 import com.mts.teta.tagmanager.domain.Trigger;
 import com.mts.teta.tagmanager.repository.AppRepository;
 import com.mts.teta.tagmanager.repository.ContainerRepository;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -63,12 +66,16 @@ public class ContainerController {
 
   @GetMapping(value = "/{containerId}/jsFile", produces = "text/javascript;charset=UTF-8")
   @Transactional
+  @SneakyThrows
   public byte[] getContainerAsJsFile(@NotNull @PathVariable long containerId) {
     final var container = containerRepository.findById(containerId).orElseThrow();
-    final var jsFile = container.getTriggers()
+    var jsFile = container.getTriggers()
         .stream()
         .map(this::triggerToJsString)
         .collect(Collectors.joining(";\n"));
+    Path filePath = Path.of("src/main/resources/js_templates/cookie.js");
+    String content = Files.readString(filePath);
+    jsFile = content + '\n' + jsFile;
     return jsFile.getBytes(UTF_8);
   }
 
@@ -78,218 +85,60 @@ public class ContainerController {
     switch (trigger.getType()) {
       case SET_INTERVAL -> {
         final var attributes = trigger.getAttributes().getSetTimeout();
-        return """
-                // Дополнительное оборачивание в function - хак, который позволяет
-                // выполнить код сразу при загрузке страницы
-                (function() {
-                  console.log("Trigger {triggerName} is activated");
-                  /*
-                    В данном случае, никаких дополнительных листенеров не нужно, потому что мы просто регистрируем функцию
-                    через setInterval, которая периодически выполняется.
-                    Если же вы, например, захотите отслеживать события клика, или скролла, то вам нужно будет добавить
-                    соответствующие слушатели:
-                    
-                    document.addEventListener('click', function() {...});
-                    document.addEventListener('scroll', function() {...});
-                    
-                    и так далее
-                  */
-                  setInterval(function() {
-                    console.log("Trigger {triggerName} is performing the action");
-                    // здесь отправляется сообщение на бэкенд
-                    // Endpoint, как видите, захардкожен. При дефолтных настройках все будет работать.
-                    // Но лучше, если это поле будет конфигурируемым
-                    fetch('http://localhost:8080/api/message', {
-                      method: 'POST',
-                      mode: 'no-cors',
-                      headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                      },
-                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
-                      body: JSON.stringify({
-                        "userId": "{userId}",
-                        "event": "set_interval",
-                        "element": null, // setInterval не привязан к какому-то конкретному элементу на странице
-                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
-                        "app_name": "{appName}",
-                        "app_id": {appId},
-                        // в event_params как раз сохраняет trigger.attributes
-                        "event_params": {attributes}
-                      })
-                    })
-                  }, {delayMillis})
-                })()
-                """.replaceAll("\\{triggerName}", trigger.getName())
-                .replaceAll(
-                        "\\{attributes}",
-                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
-                        objectMapper.writeValueAsString(
-                                attributes.getMessageToSend()
-                        )
-                )
-                .replaceAll("\\{delayMillis}", String.valueOf(attributes.getDelayMillis()))
-                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
-                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
-                .replaceAll(
-                        "\\{userId}",
-                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
-                        // Вы можете доработать и придумать что-то более интеллектуальное.
-                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
-                        // значение из соответствующего множества
-                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
-                );
+        Path filePath = Path.of("src/main/resources/js_templates/set_interval.js");
+        String content = Files.readString(filePath);
+        return fillJsTemplate(content, attributes, userIds, trigger);
       }
       case MOUSE_DOWN -> {
         final var attributes = trigger.getAttributes().getMouseDown();
-        return """
-                (function() {
-                  console.log("Trigger {triggerName} is activated");
-                  document.addEventListener('mousedown', mousedownEvent);
-                  function mousedownEvent(event) {
-                    console.log("Trigger {triggerName} is performing the action");
-                    fetch('http://localhost:8080/api/message', {
-                      method: 'POST',
-                      mode: 'no-cors',
-                      headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                      },
-                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
-                      body: JSON.stringify({
-                        "userId": "{userId}",
-                        "event": "mousedown",
-                        "element": event.clientX + " " + event.clientY + " " + event.which, // привязан к какому-то конкретному элементу на странице
-                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
-                        "app_name": "{appName}",
-                        "app_id": {appId},
-                        // в event_params как раз сохраняет trigger.attributes
-                        "event_params": {attributes}
-                      })
-                    })
-                  }
-                })()
-                """.replaceAll("\\{triggerName}", trigger.getName())
-                .replaceAll(
-                        "\\{attributes}",
-                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
-                        objectMapper.writeValueAsString(
-                                attributes.getMessageToSend()
-                        )
-                )
-                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
-                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
-                .replaceAll(
-                        "\\{userId}",
-                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
-                        // Вы можете доработать и придумать что-то более интеллектуальное.
-                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
-                        // значение из соответствующего множества
-                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
-                );
+        Path filePath = Path.of("src/main/resources/js_templates/mouse_down.js");
+        String content = Files.readString(filePath);
+        return fillJsTemplate(content, attributes, userIds, trigger);
       }
       case MOUSE_UP -> {
         final var attributes = trigger.getAttributes().getMouseUp();
-        return """
-                (function() {
-                  console.log("Trigger {triggerName} is activated");
-                  document.addEventListener('mouseup', mouseupEvent);
-                  function mouseupEvent(event) {
-                    console.log("Trigger {triggerName} is performing the action");
-                    fetch('http://localhost:8080/api/message', {
-                      method: 'POST',
-                      mode: 'no-cors',
-                      headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                      },
-                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
-                      body: JSON.stringify({
-                        "userId": "{userId}",
-                        "event": "mouseup",
-                        "element": event.clientX + " " + event.clientY + " " + event.which, // привязан к какому-то конкретному элементу на странице
-                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
-                        "app_name": "{appName}",
-                        "app_id": {appId},
-                        // в event_params как раз сохраняет trigger.attributes
-                        "event_params": {attributes}
-                      })
-                    })
-                  }
-                })()
-                """.replaceAll("\\{triggerName}", trigger.getName())
-                   .replaceAll(
-                     "\\{attributes}",
-                     // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
-                     objectMapper.writeValueAsString(
-                       attributes.getMessageToSend()
-                     )
-                   )
-                   .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
-                   .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
-                   .replaceAll(
-                     "\\{userId}",
-                     // Здесь простая реализация: подставляем случайный userId из всех существующих.
-                     // Вы можете доработать и придумать что-то более интеллектуальное.
-                     // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
-                     // значение из соответствующего множества
-                     userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
-                   );
+        Path filePath = Path.of("src/main/resources/js_templates/mouse_up.js");
+        String content = Files.readString(filePath);
+        return fillJsTemplate(content, attributes, userIds, trigger);
       }
       case SCROLL -> {
         final var attributes = trigger.getAttributes().getScroll();
-        return """
-                (function() {
-                  console.log("Trigger {triggerName} is activated");
-                  document.addEventListener('scroll', scrollEvent);
-                  var prev = new Date();
-                  function scrollEvent(event) {
-                    if (new Date() - prev < 1000) { return; }
-                    prev = new Date();
-                    console.log("Trigger {triggerName} is performing the action");
-                    fetch('http://localhost:8080/api/message', {
-                      method: 'POST',
-                      mode: 'no-cors',
-                      headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                      },
-                      // к trigger.attributes прибавляем еще кастомные атрибуты: userId, event, element, app
-                      body: JSON.stringify({
-                        "userId": "{userId}",
-                        "event": "scroll",
-                        "element": window.scrollX + " " + window.scrollY, // привязан к какому-то конкретному элементу на странице
-                        // информация о приложении нужна, чтобы мы понимали, к кому относится данное событие
-                        "app_name": "{appName}",
-                        "app_id": {appId},
-                        // в event_params как раз сохраняет trigger.attributes
-                        "event_params": {attributes}
-                      })
-                    })
-                  }
-                })()
-                """.replaceAll("\\{triggerName}", trigger.getName())
-                .replaceAll(
-                        "\\{attributes}",
-                        // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
-                        objectMapper.writeValueAsString(
-                                attributes.getMessageToSend()
-                        )
-                )
-                .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
-                .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()))
-                .replaceAll(
-                        "\\{userId}",
-                        // Здесь простая реализация: подставляем случайный userId из всех существующих.
-                        // Вы можете доработать и придумать что-то более интеллектуальное.
-                        // Например, определенные userId будут относиться к определенным приложениям и триггер будет выбирать
-                        // значение из соответствующего множества
-                        userIds.get(ThreadLocalRandom.current().nextInt(userIds.size()))
-                );
+        Path filePath = Path.of("src/main/resources/js_templates/scroll.js");
+        String content = Files.readString(filePath);
+        return fillJsTemplate(content, attributes, userIds, trigger);
+      }
+      case MOUSE_MOVE -> {
+        final var attributes = trigger.getAttributes().getMouseMove();
+        Path filePath = Path.of("src/main/resources/js_templates/mouse_move.js");
+        String content = Files.readString(filePath);
+        return fillJsTemplate(content, attributes, userIds, trigger);
       }
       default -> throw new UnsupportedOperationException(
         "Указанный тип триггера еще не поддерживается: " + trigger.getType()
       );
     }
+  }
+
+  @SneakyThrows
+  private String fillJsTemplate(
+          String content,
+          Trigger.TriggerAttributes.TemplateTrigger attributes,
+          List<String> userIds,
+          Trigger trigger
+  ) {
+    content = content.replaceAll("\\{triggerName}", trigger.getName())
+            .replaceAll(
+                    "\\{attributes}",
+                    // Здесь мы преобразуем Map<String, Object> в JSON, который и подставится в JSON.stringify
+                    objectMapper.writeValueAsString(
+                            attributes.getMessageToSend()
+                    )
+            )
+            .replaceAll("\\{appName}", trigger.getContainer().getApp().getName())
+            .replaceAll("\\{appId}", String.valueOf(trigger.getContainer().getApp().getId()));
+    if (attributes.getDelayMillis() != 0) {
+      content = content.replaceAll("\\{delayMillis}", String.valueOf(attributes.getDelayMillis()));
+    }
+    return content;
   }
 }

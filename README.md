@@ -12,6 +12,12 @@ docker run --name mts-teta-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_US
 
 # Clickhouse
 docker run -e CLICKHOUSE_DB=db -e CLICKHOUSE_USER=username -e CLICKHOUSE_PASSWORD=password -p 8123:8123 -d yandex/clickhouse-server
+
+# Redis
+docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest
+
+# Kafka
+docker run --name=kafka -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181 -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest --topic
 ```
 
 К Postgres можно цепляться через [DBeaver](https://dbeaver.io/). К Clickhouse тоже, но также

@@ -29,4 +29,9 @@ public class InMemoryUserInfoRepository implements
   public List<String> findAllUserIds() {
     return new ArrayList<>(data.keySet());
   }
+
+  @Override
+  public void updateMsisdn(String userId, String msisdn) {
+    data.put(userId, msisdn);
+  }
 }

@@ -11,4 +11,6 @@ public interface UserInfoRepository {
   Optional<String> findMsisdnByUserId(String userId);
 
   List<String> findAllUserIds();
+
+  void updateMsisdn(String userId, String msisdn);
 }

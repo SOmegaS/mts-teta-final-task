@@ -5,7 +5,6 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mts.teta.enricher.Message;
 import com.mts.teta.enricher.db.AnalyticDB;
-import com.mts.teta.enricher.process.EnrichedMessage;
 import com.mts.teta.enricher.process.EnricherService;
 import java.util.Map;
 import javax.validation.constraints.NotNull;

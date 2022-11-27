@@ -1,8 +1,8 @@
 package com.mts.teta.enricher.db;
 
-import com.mts.teta.enricher.process.EnrichedMessage;
+import com.mts.teta.enricher.Message;
 
 public interface AnalyticDB {
 
-  void persistMessage(EnrichedMessage message);
+  void persistMessage(Message message);
 }

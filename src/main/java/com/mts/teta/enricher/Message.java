@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Здесь мы парсим поля, которые нам отправил TagManager,
@@ -25,6 +26,8 @@ public class Message {
   // Для этого вам нужно будет внести изменения в JS, который возвращает ContainerController
   private final OffsetDateTime timestamp;
   private final Map<String, Object> eventParams;
+  @Setter
+  private String msisdn;
 
   public Message(Map<String, Object> rawMessage) {
     this.userId = parseString(rawMessage, "userId");
@@ -34,6 +37,7 @@ public class Message {
     this.appId = parseLong(rawMessage, "app_id");
     this.eventParams = parseMap(rawMessage, "event_params");
     this.timestamp = OffsetDateTime.now();
+    this.msisdn = parseString(rawMessage, "msisdn");
   }
 
   private static String parseString(Map<String, Object> msg, String field) {

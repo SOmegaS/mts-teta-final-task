@@ -3,7 +3,7 @@ package com.mts.teta.enricher.db;
 import com.clickhouse.jdbc.ClickHouseDataSource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mts.teta.enricher.process.EnrichedMessage;
+import com.mts.teta.enricher.Message;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Properties;
@@ -25,9 +25,8 @@ public class ClickhouseAnalyticDB implements AnalyticDB {
   private final ObjectMapper objectMapper;
 
   @Override
-  public void persistMessage(EnrichedMessage enrichedMessage) {
+  public void persistMessage(Message message) {
     final var dataSource = wrapper.getDataSource();
-    final var message = enrichedMessage.getMessage();
     try (final var connection = dataSource.getConnection()) {
       final var statement = connection.prepareStatement(""" 
           INSERT INTO db.event(user_id, event, element, app_name, app_id, event_params, server_timestamp, msisdn)
@@ -48,7 +47,7 @@ public class ClickhouseAnalyticDB implements AnalyticDB {
               message.getTimestamp().toInstant()
           )
       );
-      statement.setString(8, enrichedMessage.getMsisdn());
+      statement.setString(8, message.getMsisdn());
       statement.execute();
     } catch (SQLException e) {
       throw new AnalyticDBException(
