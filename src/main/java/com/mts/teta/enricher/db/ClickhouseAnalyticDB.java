@@ -12,20 +12,26 @@ import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 /**
- * Реализация, которая сохряняет полученные сообщения в Clickhouse.
+ * Реализация, которая сохраняет полученные сообщения в Clickhouse.
  */
 @Service
 @RequiredArgsConstructor
 public class ClickhouseAnalyticDB implements AnalyticDB {
-
   private final ClickhouseWrapper wrapper;
   private final ObjectMapper objectMapper;
 
-  @Override
-  public void persistMessage(Message message) {
+  private Message stringToMessage(String msg) throws JsonProcessingException {
+    return objectMapper.readValue(msg, Message.class);
+  }
+
+  @KafkaListener(topics = "enriched_messages", groupId = "app.1")
+  @SneakyThrows
+  public void persistMessage(String msg) {
+    Message message = stringToMessage(msg);
     final var dataSource = wrapper.getDataSource();
     try (final var connection = dataSource.getConnection()) {
       final var statement = connection.prepareStatement(""" 

@@ -1,5 +1,6 @@
 package com.mts.teta.enricher;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
@@ -38,6 +39,17 @@ public class Message {
     this.eventParams = parseMap(rawMessage, "event_params");
     this.timestamp = OffsetDateTime.now();
     this.msisdn = parseString(rawMessage, "msisdn");
+  }
+
+  public Message(String userId, String event, String element, String appName, Long appId, Map eventParams, OffsetDateTime timestamp, String msisdn) {
+    this.userId = userId;
+    this.event = event;
+    this.element = element;
+    this.appName = appName;
+    this.appId = appId;
+    this.eventParams = eventParams;
+    this.timestamp = timestamp;
+    this.msisdn = msisdn;
   }
 
   private static String parseString(Map<String, Object> msg, String field) {

@@ -4,5 +4,5 @@ import com.mts.teta.enricher.Message;
 
 public interface AnalyticDB {
 
-  void persistMessage(Message message);
+  // void persistMessage(Message message);
 }
