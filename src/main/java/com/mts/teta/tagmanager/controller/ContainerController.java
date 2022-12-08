@@ -141,4 +141,12 @@ public class ContainerController {
     }
     return content;
   }
+
+  @PostMapping("/update_user")
+  public void updateUser(
+          @RequestParam String userId,
+          @RequestParam String msisdn
+  ) {
+    userInfoRepository.updateMsisdn(userId, msisdn);
+  }
 }
