@@ -1,0 +1,19 @@
+.input-part-2 {
+    padding: 20px;
+}
+
+.input-part-2 > span {
+    margin: 0px 10px;
+}
+
+.btn-for-submit {
+    border: none;
+    outline: none;
+    padding: 4px;
+    background-color: bisque;
+    border-radius: 15px;
+}
+
+.name, .app_id, .id, .type, .container_id {
+    margin-right: 5px;
+}
