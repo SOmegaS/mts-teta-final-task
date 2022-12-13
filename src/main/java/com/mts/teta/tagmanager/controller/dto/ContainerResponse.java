@@ -5,6 +5,8 @@ import com.mts.teta.tagmanager.domain.Trigger;
 import com.mts.teta.tagmanager.domain.Trigger.TriggerAttributes;
 import com.mts.teta.tagmanager.domain.Trigger.TriggerType;
 import java.util.List;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 
@@ -13,9 +15,9 @@ public class ContainerResponse {
 
   @NotNull
   private final long id;
-  @NotNull
+  @NotBlank
   private final String name;
-  @NotNull
+  @NotEmpty
   private final List<TriggerResponse> triggers;
 
   public ContainerResponse(Container container) {
@@ -32,7 +34,7 @@ public class ContainerResponse {
 
     @NotNull
     private final long id;
-    @NotNull
+    @NotBlank
     private final String name;
     @NotNull
     private final TriggerType type;

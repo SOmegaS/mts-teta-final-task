@@ -12,6 +12,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -31,7 +32,7 @@ public class App {
   private Long id;
 
   @Size(message = "Max app size is {max} but value is ${validatedValue}", max = 200)
-  @NotNull(message = "App name is null")
+  @NotBlank(message = "App name is null")
   private String name;
 
   @OneToMany(fetch = LAZY, mappedBy = "app")

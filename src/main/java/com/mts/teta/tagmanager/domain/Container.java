@@ -16,6 +16,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Getter;
@@ -34,7 +35,7 @@ public class Container {
   private Long id;
 
   @Size(message = "Max container name size is {max} but value is ${validatedValue}", max = 200)
-  @NotNull
+  @NotBlank
   private String name;
 
   @ManyToOne(fetch = LAZY)

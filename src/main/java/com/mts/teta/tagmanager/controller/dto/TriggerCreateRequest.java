@@ -5,13 +5,14 @@ import com.mts.teta.tagmanager.domain.Trigger.TriggerAttributes;
 import com.mts.teta.tagmanager.domain.Trigger.TriggerType;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
 public class TriggerCreateRequest {
 
-  @NotNull
+  @NotBlank
   private final String name;
   @NotNull
   private final TriggerType type;

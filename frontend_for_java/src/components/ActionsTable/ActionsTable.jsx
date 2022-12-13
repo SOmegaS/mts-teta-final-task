@@ -3,7 +3,7 @@ import axios from 'axios';
 import './ActionsTable.css';
 
 function ActionsTable() {
-
+    // Удалить все внутри []
     const [data, setData] = useState([{user_id: 1, event: 'moveup', element: '543 643', app_name: 'present', app_id: 1, event_params:'', server_timestamp: '2022-01-01 01:00:00', misisdn: '8005553536'},
     {user_id: 1, event: 'moveup', element: '543 643', app_name: 'present', app_id: 1, event_params:'', server_timestamp: '2022-01-01 01:00:00', misisdn: '8005553536'},
     {user_id: 1, event: 'moveup', element: '543 643', app_name: 'present', app_id: 1, event_params:'', server_timestamp: '2022-01-01 01:00:00', misisdn: '8005553536'},
@@ -26,6 +26,8 @@ function ActionsTable() {
             console.log(err)
         }
     }, [])
+
+    // Раскомментировать
 
     //useEffect(() => {
     //    getData()
