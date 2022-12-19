@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,8 @@ public class ClickhouseAnalyticDB implements AnalyticDB {
   private final ObjectMapper objectMapper;
 
   private Message stringToMessage(String msg) throws JsonProcessingException {
-    return objectMapper.readValue(msg, Message.class);
+    // return objectMapper.readValue(msg, Message.class);
+    return new Message(objectMapper.readValue(msg, Map.class), true);
   }
 
   @KafkaListener(topics = "enriched_messages", groupId = "app.1")

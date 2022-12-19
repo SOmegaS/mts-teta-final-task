@@ -31,13 +31,19 @@ public class Message {
   @Setter
   private String msisdn;
 
-  public Message(Map<String, Object> rawMessage) {
+  public Message(Map<String, Object> rawMessage, boolean caseName) {
     this.userId = parseString(rawMessage, "userId");
     this.event = parseString(rawMessage, "event");
     this.element = parseString(rawMessage, "element");
-    this.appName = parseString(rawMessage, "app_name");
-    this.appId = parseLong(rawMessage, "app_id");
-    this.eventParams = parseMap(rawMessage, "event_params");
+    if (caseName) {
+      this.appName = parseString(rawMessage, "appName");
+      this.appId = parseLong(rawMessage, "appId");
+      this.eventParams = parseMap(rawMessage, "eventParams");
+    } else {
+      this.appName = parseString(rawMessage, "app_name");
+      this.appId = parseLong(rawMessage, "app_id");
+      this.eventParams = parseMap(rawMessage, "event_params");
+    }
     this.timestamp = OffsetDateTime.now();
     this.msisdn = parseString(rawMessage, "msisdn");
   }

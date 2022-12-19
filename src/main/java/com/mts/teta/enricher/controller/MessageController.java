@@ -42,7 +42,7 @@ public class MessageController {
   // Потому что со временем формат сообщений может меняться, да и клиенты нашей платформы
   // могут отправлять нам не структированные сообщения. Мы все равно должны их все принимать и не отвечать ошибкой.
   public void acceptMessage(@NotBlank @RequestBody String rawMessage) {
-    final var message = new Message(objectMapper.readValue(rawMessage, Map.class));
+    final var message = new Message(objectMapper.readValue(rawMessage, Map.class), false);
     final var enrichedMessage = enricherService.enrich(message);
     sendMessage(enrichedMessage);
   }
