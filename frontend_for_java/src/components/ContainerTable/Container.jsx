@@ -4,22 +4,19 @@ import axios from 'axios';
 
 function ContainerTable() {
 
-    const [infoToAdd, setInfoToAdd] = useState({id: '', name: '', app_id: ''})
+    const [infoToAdd, setInfoToAdd] = useState({id: '', name: '', appId: ''})
 
-    const [data, setData] = useState([{id: 1, name: 'name', app_id: 'app_id'}, {id: 1, name: 'name', app_id: 'app_id'}, {id: 1, name: 'name', app_id: 'app_id'}, 
-    {id: 1, name: 'name', app_id: 'app_id'}, {id: 1, name: 'name', app_id: 'app_id'}, {id: 1, name: 'name', app_id: 'app_id'},
-    {id: 1, name: 'name', app_id: 'app_id'}, {id: 1, name: 'name', app_id: 'app_id'}])
+    const [data, setData] = useState([])
 
     const getData = useCallback(async () => {
         try {
-            await axios.get('', {
+            await axios.get('/api/containerstable', {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
             .then(res => {
-                res = JSON.parse(res.data)
-                setData(res)
+                setData(res.data)
             })
         } catch (err) {
             console.log(err)
@@ -29,7 +26,7 @@ function ContainerTable() {
     const sendInfo = useCallback(async() => {
         try {
             await axios.post('', 
-            {id: infoToAdd.id, name: infoToAdd.name, app_id: infoToAdd.app_id},
+            {id: infoToAdd.id, name: infoToAdd.name, appId: infoToAdd.appId},
             {
                 headers: {
                     'Content-Type': 'application/json'
@@ -43,9 +40,9 @@ function ContainerTable() {
     }, [infoToAdd])
 
 
-    //useEffect(() => {
-    //    getData()
-    //}, [getData])
+    useEffect(() => {
+        getData()
+    }, [getData])
 
     return (
         <div className="containertable">
@@ -60,7 +57,7 @@ function ContainerTable() {
                 </span>
                 <span>
                     <label className='app_id' htmlFor='app_id'>App id</label>
-                    <input id='app_id' type="text" value={infoToAdd.app_id} onChange={e => setInfoToAdd({...infoToAdd, app_id: e.target.value})}></input>
+                    <input id='app_id' type="text" value={infoToAdd.appId} onChange={e => setInfoToAdd({...infoToAdd, appId: e.target.value})}></input>
                 </span>
                 <span>
                     <button className='btn-for-submit' type='submit' onClick={(e) => {
@@ -77,6 +74,7 @@ function ContainerTable() {
                                 <th>id</th>
                                 <th>name</th>
                                 <th>app_id</th>
+                                <th>triggers_id</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -84,7 +82,8 @@ function ContainerTable() {
                                 <tr>
                                     <th>{info.id}</th>
                                     <th>{info.name}</th>
-                                    <th>{info.app_id}</th>
+                                    <th>{info.appId}</th>
+                                    <th>{JSON.stringify(info.triggersId)}</th>
                                 </tr>
                             )}
                         </tbody>

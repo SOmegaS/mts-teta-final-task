@@ -11,7 +11,7 @@ function App() {
 
   return (
     <div className="app">
-      <header className='header'>
+      <div className='header'>
         <h1>Tag manager</h1>
         <div className='change-page-btn'>
           <span className='btn-for-page' onClick={() => setPage('actions')}>Actions</span>
@@ -19,8 +19,8 @@ function App() {
           <span className='btn-for-page' onClick={() => setPage('container')}>Containers</span>
           <span className='btn-for-page' onClick={() => setPage('app')}>Apps</span>
         </div>
-      </header>
-      <body>
+      </div>
+      <div>
         {page === 'actions' ? 
           <>
             <ActionsTable />
@@ -35,7 +35,7 @@ function App() {
             <ContainerTable /> 
           </> : <></>
         }
-      </body>
+      </div>
     </div>
   );
 }

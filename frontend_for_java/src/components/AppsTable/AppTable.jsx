@@ -6,19 +6,17 @@ function AppTable() {
 
     const [infoToAdd, setInfoToAdd] = useState({id: '', name: ''})
 
-    const [data, setData] = useState([{id: 1, name: 'name'}, {id: 1, name: 'name'}, {id: 1, name: 'name'}, {id: 1, name: 'name'}, 
-    {id: 1, name: 'name'}, {id: 1, name: 'name'}, {id: 1, name: 'name'}, {id: 1, name: 'name'}])
+    const [data, setData] = useState([])
 
     const getData = useCallback(async () => {
         try {
-            await axios.get('', {
+            await axios.get('/api/appsstable', {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
             .then(res => {
-                res = JSON.parse(res.data)
-                setData(res)
+                setData(res.data)
             })
         } catch (err) {
             console.log(err)
@@ -28,22 +26,22 @@ function AppTable() {
     const sendInfo = useCallback(async() => {
         try {
             await axios.post('', 
-            {id: infoToAdd.id, name: infoToAdd.name},
+            {id: infoToAdd.id, name: infoToAdd.name, containersId: infoToAdd.containersId},
             {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
             .then(() => setData(...infoToAdd, infoToAdd))
-            .then(setInfoToAdd({id: '', name: ''}))
+            .then(setInfoToAdd({id: '', name: '', containersId: ''}))
         } catch (err) {
             console.log(err)
         }
     }, [infoToAdd])
 
-    //useEffect(() => {
-    //    getData()
-    //}, [getData])
+    useEffect(() => {
+        getData()
+    }, [getData])
 
     return (
         <div className="apptable">
@@ -71,13 +69,15 @@ function AppTable() {
                             <tr>
                                 <th>id</th>
                                 <th>name</th>
+                                <th>containers_id</th>
                             </tr>
                         </thead>
                         <tbody>
                             {data.map(info => 
-                                <tr>
+                                <tr >
                                     <th>{info.id}</th>
                                     <th>{info.name}</th>
+                                    <th>{JSON.stringify(info.containersId)}</th>
                                 </tr>
                             )}
                         </tbody>

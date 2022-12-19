@@ -4,9 +4,14 @@ import com.clickhouse.jdbc.ClickHouseDataSource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mts.teta.enricher.Message;
+
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,6 +70,33 @@ public class ClickhouseAnalyticDB implements AnalyticDB {
           "Unexpected error during JSON serialization", e
       );
     }
+  }
+
+  public List<Message> GetMessages() {
+    List<Message> messages = new ArrayList<>();
+    final var dataSource = wrapper.getDataSource();
+    try (final var connection = dataSource.getConnection()) {
+      final var statement = connection.prepareStatement("""
+          SELECT * FROM db.event""");
+      ResultSet resultSet = statement.executeQuery();
+      while (resultSet.next()) {
+        messages.add(new Message(
+                resultSet.getString("user_id"),
+                resultSet.getString("event"),
+                resultSet.getString("element"),
+                resultSet.getString("app_name"),
+                resultSet.getLong("app_id"),
+                resultSet.getString("event_params"),
+                resultSet.getDate("server_timestamp"),
+                resultSet.getString("msisdn")));
+      }
+    } catch (SQLException e) {
+      throw new AnalyticDBException(
+              "Unexpected exception during connection to Clickhouse",
+              e
+      );
+    }
+    return messages;
   }
 
   @Configuration
