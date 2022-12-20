@@ -31,3 +31,27 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+frontend_for_java/node_modules
+frontend_for_java/.pnp
+frontend_for_java/.pnp.js
+
+# testing
+frontend_for_java//coverage
+
+# production
+frontend_for_java//build
+
+# misc
+frontend_for_java/.DS_Store
+frontend_for_java/.env.local
+frontend_for_java/.env.development.local
+frontend_for_java/.env.test.local
+frontend_for_java/.env.production.local
+
+frontend_for_java/npm-debug.log*
+frontend_for_java/yarn-debug.log*
+frontend_for_java/yarn-error.log*

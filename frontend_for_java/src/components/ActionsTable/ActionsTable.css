@@ -1,0 +1,33 @@
+.input-part-1 {
+    min-height: 200px;
+    background-color: blue;
+}
+
+.table {
+    table-layout: fixed;
+    width: auto;
+    border-collapse: collapse;
+    box-sizing: border-box;
+}
+
+.table-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+
+
+tbody th, tbody td {
+    font-weight: 400;
+    padding: 20px;
+}
+
+thead th:nth-child {
+    font-weight: 700;
+    width: auto;
+    font-weight: 500;
+    padding: 20px;
+}

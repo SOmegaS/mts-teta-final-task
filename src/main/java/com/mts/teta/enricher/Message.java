@@ -1,9 +1,11 @@
 package com.mts.teta.enricher;
 
-import java.time.LocalDateTime;
+import java.sql.Date;
 import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +13,6 @@ import lombok.Setter;
 /**
  * Здесь мы парсим поля, которые нам отправил TagManager,
  * с помощью javascript, который вернул ContainerController.
- *
  * Любое поле может отсутствовать. Тогда мы не должны падать, а просто заполняем его как null
  */
 @Getter
@@ -30,13 +31,19 @@ public class Message {
   @Setter
   private String msisdn;
 
-  public Message(Map<String, Object> rawMessage) {
+  public Message(Map<String, Object> rawMessage, boolean caseName) {
     this.userId = parseString(rawMessage, "userId");
     this.event = parseString(rawMessage, "event");
     this.element = parseString(rawMessage, "element");
-    this.appName = parseString(rawMessage, "app_name");
-    this.appId = parseLong(rawMessage, "app_id");
-    this.eventParams = parseMap(rawMessage, "event_params");
+    if (caseName) {
+      this.appName = parseString(rawMessage, "appName");
+      this.appId = parseLong(rawMessage, "appId");
+      this.eventParams = parseMap(rawMessage, "eventParams");
+    } else {
+      this.appName = parseString(rawMessage, "app_name");
+      this.appId = parseLong(rawMessage, "app_id");
+      this.eventParams = parseMap(rawMessage, "event_params");
+    }
     this.timestamp = OffsetDateTime.now();
     this.msisdn = parseString(rawMessage, "msisdn");
   }
@@ -49,6 +56,19 @@ public class Message {
     this.appId = appId;
     this.eventParams = eventParams;
     this.timestamp = timestamp;
+    this.msisdn = msisdn;
+  }
+
+  public Message(String userId, String event, String element, String appName, Long appId, String eventParams, Date timestamp, String msisdn) {
+    this.userId = userId;
+    this.event = event;
+    this.element = element;
+    this.appName = appName;
+    this.appId = appId;
+    this.eventParams = new HashMap<>();
+    this.timestamp = OffsetDateTime.now();
+    // this.eventParams = Splitter.on()eventParams;
+    // this.timestamp = timestamp;
     this.msisdn = msisdn;
   }
 
